@@ -1,0 +1,71 @@
+WITH s AS 
+
+(
+SELECT
+    ss.aircraft_code,
+    count(ss.seat_no) total_seats
+FROM 
+    dst_project.seats ss
+GROUP BY 
+    ss.aircraft_code
+)
+
+SELECT  
+    f.flight_id,
+    f.flight_no,
+    f.departure_airport,
+    ac1.longitude dep_longitude,
+    ac1.latitude dep_latitude,
+    f.arrival_airport,
+    a.airport_name,
+    f.actual_departure,
+    f.actual_arrival,
+    f.actual_arrival - f.actual_departure duration,
+    a.city,
+    a.longitude arrival_longitude,
+    a.latitude arrival_latitude,
+    a.timezone,
+    ac.model,
+    ac.range,
+    SUM(tf.amount) ticket_price,
+    COUNT(distinct tf.ticket_no) seats_occupied,
+    s.total_seats seats_total
+
+
+FROM 
+    dst_project.flights f
+    LEFT JOIN dst_project.ticket_flights tf
+        ON f.flight_id = tf.flight_id
+        LEFT JOIN dst_project.airports a  
+            ON f.arrival_airport = a.airport_code
+            LEFT JOIN dst_project.aircrafts ac 
+                ON f.aircraft_code = ac.aircraft_code
+                JOIN s 
+                    ON s.aircraft_code = f.aircraft_code
+                    LEFT JOIN dst_project.airports ac1
+                        ON ac1.airport_code = f.departure_airport
+WHERE 
+    departure_airport = 'AAQ'
+      AND extract ('month' from f.scheduled_departure) in (12,1,2)
+      AND status not in ('Cancelled')
+                
+GROUP BY 
+    f.flight_id,
+    f.flight_no,
+    f.departure_airport,
+    ac1.longitude,
+    ac1.latitude,
+    f.arrival_airport,
+    a.airport_name,
+    f.actual_departure,
+    f.actual_arrival,
+    a.city,
+    a.longitude,
+    a.latitude,
+    a.timezone,
+    ac.model,
+    ac.range,
+    s.total_seats
+        
+ORDER BY 
+    1
